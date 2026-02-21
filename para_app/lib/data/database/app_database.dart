@@ -1,7 +1,5 @@
 import 'dart:io';
-
 import 'package:drift/drift.dart';
-import 'package:drift/native.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -198,7 +196,8 @@ class AppDatabase extends _$AppDatabase {
       into(resources).insertOnConflictUpdate(companion);
 
   Future<void> upsertResourceTag(ResourceTagsCompanion companion) =>
-      into(resourceTags).insertOnConflictUpdate(companion);
+      into(resourceTags).insertOnConflict
+          .update(companion);
 
   Future<void> deleteResource(String id) =>
       (delete(resources)..where((r) => r.id.equals(id))).go();
