@@ -46,6 +46,12 @@ dependencies:
   path_provider: ^2.1.5
   path: ^1.9.0
   window_manager: ^0.5.1
+  sqlite3: ^2.9.4
+  firebase_core: ^4.4.0
+  firebase_auth: ^6.1.4
+  cloud_firestore: ^6.1.2
+  google_sign_in: ^7.2.0
+  firebase_ui_auth: ^3.0.1
 
 dev_dependencies:
   flutter_test:

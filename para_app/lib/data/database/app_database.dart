@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:drift/drift.dart';
+import 'package:drift/native.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
@@ -31,8 +32,7 @@ class Tasks extends Table {
   TextColumn get id => text()();
   TextColumn get projectId => text()();
   TextColumn get title => text()();
-  BoolColumn get isCompleted =>
-      boolean().withDefault(const Constant(false))();
+  BoolColumn get isCompleted => boolean().withDefault(const Constant(false))();
   IntColumn get orderIndex => integer().withDefault(const Constant(0))();
   DateTimeColumn get createdAt => dateTime()();
 
@@ -141,9 +141,9 @@ class AppDatabase extends _$AppDatabase {
       (select(tasks)..where((t) => t.projectId.equals(projectId))).get();
 
   Future<List<TagRow>> getTagsByProject(String projectId) async {
-    final ptRows = await (select(projectTags)
-          ..where((pt) => pt.projectId.equals(projectId)))
-        .get();
+    final ptRows = await (select(
+      projectTags,
+    )..where((pt) => pt.projectId.equals(projectId))).get();
     if (ptRows.isEmpty) return [];
     final ids = ptRows.map((pt) => pt.tagId).toList();
     return (select(tags)..where((t) => t.id.isIn(ids))).get();
@@ -168,8 +168,7 @@ class AppDatabase extends _$AppDatabase {
       (delete(tasks)..where((t) => t.projectId.equals(projectId))).go();
 
   Future<void> deleteProjectTags(String projectId) =>
-      (delete(projectTags)..where((pt) => pt.projectId.equals(projectId)))
-          .go();
+      (delete(projectTags)..where((pt) => pt.projectId.equals(projectId))).go();
 
   // ── Areas ─────────────────────────────
   Future<List<AreaRow>> getAllAreas() => select(areas).get();
@@ -184,9 +183,9 @@ class AppDatabase extends _$AppDatabase {
   Future<List<ResourceRow>> getAllResources() => select(resources).get();
 
   Future<List<TagRow>> getTagsByResource(String resourceId) async {
-    final rtRows = await (select(resourceTags)
-          ..where((rt) => rt.resourceId.equals(resourceId)))
-        .get();
+    final rtRows = await (select(
+      resourceTags,
+    )..where((rt) => rt.resourceId.equals(resourceId))).get();
     if (rtRows.isEmpty) return [];
     final ids = rtRows.map((rt) => rt.tagId).toList();
     return (select(tags)..where((t) => t.id.isIn(ids))).get();
@@ -196,22 +195,19 @@ class AppDatabase extends _$AppDatabase {
       into(resources).insertOnConflictUpdate(companion);
 
   Future<void> upsertResourceTag(ResourceTagsCompanion companion) =>
-      into(resourceTags).insertOnConflict
-          .update(companion);
+      into(resourceTags).insertOnConflictUpdate(companion);
 
   Future<void> deleteResource(String id) =>
       (delete(resources)..where((r) => r.id.equals(id))).go();
 
-  Future<void> deleteResourceTags(String resourceId) =>
-      (delete(resourceTags)
-            ..where((rt) => rt.resourceId.equals(resourceId)))
-          .go();
+  Future<void> deleteResourceTags(String resourceId) => (delete(
+    resourceTags,
+  )..where((rt) => rt.resourceId.equals(resourceId))).go();
 
   // ── Inbox ─────────────────────────────
-  Future<List<InboxRow>> getAllInboxItems() =>
-      (select(inboxItems)
-            ..orderBy([(i) => OrderingTerm.desc(i.createdAt)]))
-          .get();
+  Future<List<InboxRow>> getAllInboxItems() => (select(
+    inboxItems,
+  )..orderBy([(i) => OrderingTerm.desc(i.createdAt)])).get();
 
   Future<void> upsertInboxItem(InboxItemsCompanion companion) =>
       into(inboxItems).insertOnConflictUpdate(companion);
@@ -228,6 +224,6 @@ LazyDatabase _openConnection() {
   return LazyDatabase(() async {
     final dbFolder = await getApplicationDocumentsDirectory();
     final file = File(p.join(dbFolder.path, 'para_db.sqlite'));
-    return NativeDatabase.createInBackground(file);
+    return NativeDatabase(file);
   });
 }

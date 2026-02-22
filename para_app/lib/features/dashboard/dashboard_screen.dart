@@ -19,171 +19,229 @@ class DashboardScreen extends ConsumerWidget {
     final urgentProjects = ref.watch(urgentProjectsProvider);
     final isDark = ref.watch(themeModeProvider);
 
-    return Scaffold(
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSizes.xl),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ── Header ────────────────────────
-            Row(
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '대시보드',
-                      style: Theme.of(context).textTheme.displayMedium,
-                    ),
-                    const SizedBox(height: AppSizes.xs),
-                    Text(
-                      '오늘도 생산적인 하루를 보내세요 ✨',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ],
-                ),
-                const Spacer(),
-                // Search Bar
-                SizedBox(
-                  width: 280,
-                  child: TextField(
-                    decoration: InputDecoration(
-                      hintText: '검색...',
-                      prefixIcon: const Icon(Icons.search, size: 20),
-                      isDense: true,
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: AppSizes.md,
-                        vertical: AppSizes.sm,
-                      ),
-                      border: OutlineInputBorder(
-                        borderRadius:
-                            BorderRadius.circular(AppSizes.radiusXl),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ).animate().fadeIn(duration: 400.ms).slideY(begin: -0.1, end: 0),
-
-            const SizedBox(height: AppSizes.xl),
-
-            // ── Overview Cards ────────────────
-            Row(
-              children: [
-                _OverviewCard(
-                  title: 'Projects',
-                  subtitle: '프로젝트',
-                  count: activeProjects.length,
-                  icon: Icons.folder,
-                  color: AppColors.projects,
-                  isDark: isDark,
-                  onTap: () => ref.read(selectedNavIndexProvider.notifier).set(1),
-                ),
-                const SizedBox(width: AppSizes.lg),
-                _OverviewCard(
-                  title: 'Areas',
-                  subtitle: '영역',
-                  count: areas.length,
-                  icon: Icons.home,
-                  color: AppColors.areas,
-                  isDark: isDark,
-                  onTap: () => ref.read(selectedNavIndexProvider.notifier).set(2),
-                ),
-                const SizedBox(width: AppSizes.lg),
-                _OverviewCard(
-                  title: 'Resources',
-                  subtitle: '자료',
-                  count: resources.length,
-                  icon: Icons.book,
-                  color: AppColors.resources,
-                  isDark: isDark,
-                  onTap: () => ref.read(selectedNavIndexProvider.notifier).set(3),
-                ),
-                const SizedBox(width: AppSizes.lg),
-                _OverviewCard(
-                  title: 'Archive',
-                  subtitle: '보관함',
-                  count: archivedProjects.length,
-                  icon: Icons.archive,
-                  color: AppColors.archive,
-                  isDark: isDark,
-                  onTap: () => ref.read(selectedNavIndexProvider.notifier).set(4),
-                ),
-              ]
-                  .asMap()
-                  .entries
-                  .map((e) => Expanded(
-                        child: e.value
-                            .animate()
-                            .fadeIn(
-                              delay: Duration(milliseconds: 100 * e.key),
-                              duration: 500.ms,
-                            )
-                            .slideY(begin: 0.2, end: 0),
-                      ))
-                  .toList(),
-            ),
-
-            const SizedBox(height: AppSizes.xl),
-
-            // ── Two Column Layout ──────────────
-            Row(
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isMobile = constraints.maxWidth < 600;
+        return Scaffold(
+          body: SingleChildScrollView(
+            padding: EdgeInsets.all(isMobile ? AppSizes.md : AppSizes.xl),
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 진행중인 프로젝트
-                Expanded(
-                  flex: 3,
-                  child: _SectionCard(
-                    title: '진행중인 프로젝트',
-                    icon: Icons.rocket_launch,
-                    isDark: isDark,
-                    child: activeProjects.isEmpty
-                        ? _buildEmptyState('아직 진행중인 프로젝트가 없습니다')
-                        : Column(
-                            children: activeProjects
-                                .take(5)
-                                .map((p) => _ProjectTile(
-                                      project: p,
-                                      isDark: isDark,
-                                      onTap: () => ref
-                                          .read(selectedNavIndexProvider
-                                              .notifier)
-                                          .set(1),
-                                    ))
-                                .toList(),
+                // ── Header ────────────────────────
+                Row(
+                      children: [
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '대시보드',
+                              style: Theme.of(context).textTheme.displayMedium,
+                            ),
+                            const SizedBox(height: AppSizes.xs),
+                            Text(
+                              '오늘도 생산적인 하루를 보내세요 ✨',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          ],
+                        ),
+                        const Spacer(),
+                        // Search Bar (데스크탑만)
+                        if (!isMobile)
+                          SizedBox(
+                            width: 280,
+                            child: TextField(
+                              decoration: InputDecoration(
+                                hintText: '검색...',
+                                prefixIcon: const Icon(Icons.search, size: 20),
+                                isDense: true,
+                                contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: AppSizes.md,
+                                  vertical: AppSizes.sm,
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(
+                                    AppSizes.radiusXl,
+                                  ),
+                                ),
+                              ),
+                            ),
                           ),
-                  ).animate().fadeIn(delay: 400.ms, duration: 500.ms),
-                ),
+                      ],
+                    )
+                    .animate()
+                    .fadeIn(duration: 400.ms)
+                    .slideY(begin: -0.1, end: 0),
 
-                const SizedBox(width: AppSizes.lg),
+                const SizedBox(height: AppSizes.xl),
 
-                // 마감 임박 / 영역
-                Expanded(
-                  flex: 2,
-                  child: Column(
+                // ── Overview Cards ────────────────
+                if (isMobile)
+                  GridView.count(
+                    crossAxisCount: 2,
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    crossAxisSpacing: AppSizes.md,
+                    mainAxisSpacing: AppSizes.md,
+                    childAspectRatio: 1.6,
                     children: [
-                      // 마감 임박
-                      if (urgentProjects.isNotEmpty)
+                      _OverviewCard(
+                        title: 'Projects',
+                        subtitle: '프로젝트',
+                        count: activeProjects.length,
+                        icon: Icons.folder,
+                        color: AppColors.projects,
+                        isDark: isDark,
+                        onTap: () =>
+                            ref.read(selectedNavIndexProvider.notifier).set(1),
+                      ),
+                      _OverviewCard(
+                        title: 'Areas',
+                        subtitle: '영역',
+                        count: areas.length,
+                        icon: Icons.home,
+                        color: AppColors.areas,
+                        isDark: isDark,
+                        onTap: () =>
+                            ref.read(selectedNavIndexProvider.notifier).set(2),
+                      ),
+                      _OverviewCard(
+                        title: 'Resources',
+                        subtitle: '자료',
+                        count: resources.length,
+                        icon: Icons.book,
+                        color: AppColors.resources,
+                        isDark: isDark,
+                        onTap: () =>
+                            ref.read(selectedNavIndexProvider.notifier).set(3),
+                      ),
+                      _OverviewCard(
+                        title: 'Archive',
+                        subtitle: '보관함',
+                        count: archivedProjects.length,
+                        icon: Icons.archive,
+                        color: AppColors.archive,
+                        isDark: isDark,
+                        onTap: () =>
+                            ref.read(selectedNavIndexProvider.notifier).set(4),
+                      ),
+                    ],
+                  )
+                else
+                  Row(
+                    children:
+                        [
+                              _OverviewCard(
+                                title: 'Projects',
+                                subtitle: '프로젝트',
+                                count: activeProjects.length,
+                                icon: Icons.folder,
+                                color: AppColors.projects,
+                                isDark: isDark,
+                                onTap: () => ref
+                                    .read(selectedNavIndexProvider.notifier)
+                                    .set(1),
+                              ),
+                              const SizedBox(width: AppSizes.lg),
+                              _OverviewCard(
+                                title: 'Areas',
+                                subtitle: '영역',
+                                count: areas.length,
+                                icon: Icons.home,
+                                color: AppColors.areas,
+                                isDark: isDark,
+                                onTap: () => ref
+                                    .read(selectedNavIndexProvider.notifier)
+                                    .set(2),
+                              ),
+                              const SizedBox(width: AppSizes.lg),
+                              _OverviewCard(
+                                title: 'Resources',
+                                subtitle: '자료',
+                                count: resources.length,
+                                icon: Icons.book,
+                                color: AppColors.resources,
+                                isDark: isDark,
+                                onTap: () => ref
+                                    .read(selectedNavIndexProvider.notifier)
+                                    .set(3),
+                              ),
+                              const SizedBox(width: AppSizes.lg),
+                              _OverviewCard(
+                                title: 'Archive',
+                                subtitle: '보관함',
+                                count: archivedProjects.length,
+                                icon: Icons.archive,
+                                color: AppColors.archive,
+                                isDark: isDark,
+                                onTap: () => ref
+                                    .read(selectedNavIndexProvider.notifier)
+                                    .set(4),
+                              ),
+                            ]
+                            .asMap()
+                            .entries
+                            .map(
+                              (e) => e.key % 2 == 1
+                                  ? e.value
+                                  : Expanded(child: e.value),
+                            )
+                            .toList(),
+                  ),
+
+                const SizedBox(height: AppSizes.xl),
+
+                // ── PARA Guide ────────────────────
+                _ParaGuideCard(
+                  isDark: isDark,
+                ).animate().fadeIn(delay: 350.ms, duration: 500.ms),
+
+                const SizedBox(height: AppSizes.xl),
+
+                // ── Two Column Layout ──────────────
+                if (isMobile)
+                  Column(
+                    children: [
+                      _SectionCard(
+                        title: '진행중인 프로젝트',
+                        icon: Icons.rocket_launch,
+                        isDark: isDark,
+                        child: activeProjects.isEmpty
+                            ? _buildEmptyState('아직 진행중인 프로젝트가 없습니다')
+                            : Column(
+                                children: activeProjects
+                                    .take(5)
+                                    .map(
+                                      (p) => _ProjectTile(
+                                        project: p,
+                                        isDark: isDark,
+                                        onTap: () => ref
+                                            .read(
+                                              selectedNavIndexProvider.notifier,
+                                            )
+                                            .set(1),
+                                      ),
+                                    )
+                                    .toList(),
+                              ),
+                      ),
+                      if (urgentProjects.isNotEmpty) ...[
+                        const SizedBox(height: AppSizes.md),
                         _SectionCard(
                           title: '마감 임박 ⚠️',
                           icon: Icons.warning_amber,
                           isDark: isDark,
                           child: Column(
                             children: urgentProjects
-                                .map((p) => _DeadlineTile(
-                                      project: p,
-                                      isDark: isDark,
-                                    ))
+                                .map(
+                                  (p) =>
+                                      _DeadlineTile(project: p, isDark: isDark),
+                                )
                                 .toList(),
                           ),
-                        )
-                            .animate()
-                            .fadeIn(delay: 500.ms, duration: 500.ms),
-
-                      if (urgentProjects.isNotEmpty)
-                        const SizedBox(height: AppSizes.lg),
-
-                      // 영역 요약
+                        ),
+                      ],
+                      const SizedBox(height: AppSizes.md),
                       _SectionCard(
                         title: '나의 영역',
                         icon: Icons.space_dashboard_outlined,
@@ -192,21 +250,98 @@ class DashboardScreen extends ConsumerWidget {
                             ? _buildEmptyState('아직 영역이 없습니다')
                             : Column(
                                 children: areas
-                                    .map((a) =>
-                                        _AreaTile(area: a, isDark: isDark))
+                                    .map(
+                                      (a) => _AreaTile(area: a, isDark: isDark),
+                                    )
                                     .toList(),
                               ),
-                      )
-                          .animate()
-                          .fadeIn(delay: 600.ms, duration: 500.ms),
+                      ),
+                    ],
+                  )
+                else
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: _SectionCard(
+                          title: '진행중인 프로젝트',
+                          icon: Icons.rocket_launch,
+                          isDark: isDark,
+                          child: activeProjects.isEmpty
+                              ? _buildEmptyState('아직 진행중인 프로젝트가 없습니다')
+                              : Column(
+                                  children: activeProjects
+                                      .take(5)
+                                      .map(
+                                        (p) => _ProjectTile(
+                                          project: p,
+                                          isDark: isDark,
+                                          onTap: () => ref
+                                              .read(
+                                                selectedNavIndexProvider
+                                                    .notifier,
+                                              )
+                                              .set(1),
+                                        ),
+                                      )
+                                      .toList(),
+                                ),
+                        ).animate().fadeIn(delay: 400.ms, duration: 500.ms),
+                      ),
+                      const SizedBox(width: AppSizes.lg),
+                      Expanded(
+                        flex: 2,
+                        child: Column(
+                          children: [
+                            if (urgentProjects.isNotEmpty)
+                              _SectionCard(
+                                title: '마감 임박 ⚠️',
+                                icon: Icons.warning_amber,
+                                isDark: isDark,
+                                child: Column(
+                                  children: urgentProjects
+                                      .map(
+                                        (p) => _DeadlineTile(
+                                          project: p,
+                                          isDark: isDark,
+                                        ),
+                                      )
+                                      .toList(),
+                                ),
+                              ).animate().fadeIn(
+                                delay: 500.ms,
+                                duration: 500.ms,
+                              ),
+                            if (urgentProjects.isNotEmpty)
+                              const SizedBox(height: AppSizes.lg),
+                            _SectionCard(
+                              title: '나의 영역',
+                              icon: Icons.space_dashboard_outlined,
+                              isDark: isDark,
+                              child: areas.isEmpty
+                                  ? _buildEmptyState('아직 영역이 없습니다')
+                                  : Column(
+                                      children: areas
+                                          .map(
+                                            (a) => _AreaTile(
+                                              area: a,
+                                              isDark: isDark,
+                                            ),
+                                          )
+                                          .toList(),
+                                    ),
+                            ).animate().fadeIn(delay: 600.ms, duration: 500.ms),
+                          ],
+                        ),
+                      ),
                     ],
                   ),
-                ),
               ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -216,11 +351,329 @@ class DashboardScreen extends ConsumerWidget {
       child: Center(
         child: Text(
           message,
-          style: const TextStyle(
-            color: AppColors.darkTextMuted,
-            fontSize: 14,
-          ),
+          style: const TextStyle(color: AppColors.darkTextMuted, fontSize: 14),
         ),
+      ),
+    );
+  }
+}
+
+/// PARA 방법론 가이드 카드
+class _ParaGuideCard extends StatefulWidget {
+  final bool isDark;
+  const _ParaGuideCard({required this.isDark});
+
+  @override
+  State<_ParaGuideCard> createState() => _ParaGuideCardState();
+}
+
+class _ParaGuideCardState extends State<_ParaGuideCard>
+    with SingleTickerProviderStateMixin {
+  bool _expanded = true;
+
+  static const _items = [
+    _GuideItem(
+      letter: 'P',
+      title: 'Projects',
+      subtitle: '프로젝트',
+      color: AppColors.projects,
+      icon: Icons.folder_outlined,
+      description: '명확한 마감일과 결과물이 있는 일련의 작업',
+      tip: '예) "앱 출시", "보고서 제출", "이사 준비"',
+    ),
+    _GuideItem(
+      letter: 'A',
+      title: 'Areas',
+      subtitle: '영역',
+      color: AppColors.areas,
+      icon: Icons.home_outlined,
+      description: '지속적으로 관리해야 하는 책임 범위',
+      tip: '예) "건강", "재정", "커리어", "가족"',
+    ),
+    _GuideItem(
+      letter: 'R',
+      title: 'Resources',
+      subtitle: '자료',
+      color: AppColors.resources,
+      icon: Icons.book_outlined,
+      description: '미래에 유용할 수 있는 정보와 참고 자료',
+      tip: '예) "Flutter 팁", "독서 노트", "레시피"',
+    ),
+    _GuideItem(
+      letter: 'A',
+      title: 'Archive',
+      subtitle: '보관함',
+      color: AppColors.archive,
+      icon: Icons.archive_outlined,
+      description: '더 이상 활성화되지 않은 항목들의 보관소',
+      tip: '완료된 프로젝트, 중단된 영역 등이 자동 이동됩니다',
+    ),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = widget.isDark;
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkCard : AppColors.lightCard,
+        borderRadius: BorderRadius.circular(AppSizes.radiusLg),
+        border: Border.all(color: AppColors.primary.withValues(alpha: 0.25)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header
+          InkWell(
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(AppSizes.radiusLg),
+              bottom: Radius.circular(AppSizes.radiusLg),
+            ),
+            onTap: () => setState(() => _expanded = !_expanded),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSizes.lg,
+                vertical: AppSizes.md,
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(AppSizes.radiusSm),
+                    ),
+                    child: const Icon(
+                      Icons.lightbulb_outline,
+                      color: AppColors.primary,
+                      size: 16,
+                    ),
+                  ),
+                  const SizedBox(width: AppSizes.sm),
+                  Text(
+                    'PARA 방법론 가이드',
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(width: AppSizes.sm),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.08),
+                      borderRadius: BorderRadius.circular(AppSizes.radiusSm),
+                    ),
+                    child: Text(
+                      'Tiago Forte',
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: AppColors.primary.withValues(alpha: 0.7),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  AnimatedRotation(
+                    turns: _expanded ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 250),
+                    child: Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: isDark
+                          ? AppColors.darkTextMuted
+                          : AppColors.lightTextMuted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          // Expandable body
+          AnimatedSize(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            child: _expanded
+                ? Column(
+                    children: [
+                      Divider(
+                        height: 1,
+                        color: isDark
+                            ? AppColors.darkBorder
+                            : AppColors.lightBorder,
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(AppSizes.lg),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '모든 정보를 4가지 카테고리로 분류하여 체계적으로 관리하세요.',
+                              style: Theme.of(context).textTheme.bodyMedium
+                                  ?.copyWith(
+                                    color: isDark
+                                        ? AppColors.darkTextSecondary
+                                        : AppColors.lightTextSecondary,
+                                  ),
+                            ),
+                            const SizedBox(height: AppSizes.lg),
+                            Row(
+                              children: _items
+                                  .map(
+                                    (item) => Expanded(
+                                      child: Padding(
+                                        padding: const EdgeInsets.only(
+                                          right: AppSizes.md,
+                                        ),
+                                        child: _GuideItemCard(
+                                          item: item,
+                                          isDark: isDark,
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
+                            ),
+                            const SizedBox(height: AppSizes.md),
+                            Row(
+                              children: [
+                                Icon(
+                                  Icons.info_outline,
+                                  size: 14,
+                                  color: isDark
+                                      ? AppColors.darkTextMuted
+                                      : AppColors.lightTextMuted,
+                                ),
+                                const SizedBox(width: AppSizes.xs),
+                                Text(
+                                  '핵심 원칙: 항목을 추가할 때 "가장 가까운 미래에 어디서 이것이 필요할까?"를 먼저 질문하세요.',
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(
+                                        color: isDark
+                                            ? AppColors.darkTextMuted
+                                            : AppColors.lightTextMuted,
+                                        fontStyle: FontStyle.italic,
+                                      ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  )
+                : const SizedBox.shrink(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GuideItem {
+  final String letter;
+  final String title;
+  final String subtitle;
+  final Color color;
+  final IconData icon;
+  final String description;
+  final String tip;
+
+  const _GuideItem({
+    required this.letter,
+    required this.title,
+    required this.subtitle,
+    required this.color,
+    required this.icon,
+    required this.description,
+    required this.tip,
+  });
+}
+
+class _GuideItemCard extends StatelessWidget {
+  final _GuideItem item;
+  final bool isDark;
+
+  const _GuideItemCard({required this.item, required this.isDark});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSizes.md),
+      decoration: BoxDecoration(
+        color: item.color.withValues(alpha: isDark ? 0.07 : 0.05),
+        borderRadius: BorderRadius.circular(AppSizes.radiusMd),
+        border: Border.all(color: item.color.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: item.color.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(AppSizes.radiusSm),
+                ),
+                child: Center(
+                  child: Text(
+                    item.letter,
+                    style: TextStyle(
+                      color: item.color,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 16,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSizes.sm),
+              Flexible(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      item.title,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: item.color,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                      ),
+                    ),
+                    Text(
+                      item.subtitle,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: item.color.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSizes.sm),
+          Text(
+            item.description,
+            style: Theme.of(
+              context,
+            ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            item.tip,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: isDark
+                  ? AppColors.darkTextMuted
+                  : AppColors.lightTextMuted,
+              fontSize: 11,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -275,8 +728,8 @@ class _OverviewCardState extends State<_OverviewCard> {
                 color: _isHovered
                     ? widget.color.withValues(alpha: 0.5)
                     : widget.isDark
-                        ? AppColors.darkBorder
-                        : AppColors.lightBorder,
+                    ? AppColors.darkBorder
+                    : AppColors.lightBorder,
               ),
               boxShadow: _isHovered
                   ? [
@@ -297,11 +750,7 @@ class _OverviewCardState extends State<_OverviewCard> {
                     color: widget.color.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(AppSizes.radiusMd),
                   ),
-                  child: Icon(
-                    widget.icon,
-                    color: widget.color,
-                    size: 24,
-                  ),
+                  child: Icon(widget.icon, color: widget.color, size: 24),
                 ),
                 const SizedBox(width: AppSizes.lg),
                 Flexible(
@@ -316,9 +765,7 @@ class _OverviewCardState extends State<_OverviewCard> {
                       const SizedBox(height: 2),
                       Text(
                         '${widget.count}',
-                        style: Theme.of(context)
-                            .textTheme
-                            .headlineMedium
+                        style: Theme.of(context).textTheme.headlineMedium
                             ?.copyWith(fontWeight: FontWeight.w800),
                       ),
                     ],
@@ -366,10 +813,7 @@ class _SectionCard extends StatelessWidget {
               children: [
                 Icon(icon, size: 20, color: AppColors.primary),
                 const SizedBox(width: AppSizes.sm),
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
+                Text(title, style: Theme.of(context).textTheme.titleMedium),
               ],
             ),
           ),
@@ -419,8 +863,8 @@ class _ProjectTileState extends State<_ProjectTile> {
           ),
           color: _isHovered
               ? (widget.isDark
-                  ? Colors.white.withValues(alpha: 0.03)
-                  : Colors.black.withValues(alpha: 0.02))
+                    ? Colors.white.withValues(alpha: 0.03)
+                    : Colors.black.withValues(alpha: 0.02))
               : Colors.transparent,
           child: Row(
             children: [
@@ -446,8 +890,7 @@ class _ProjectTileState extends State<_ProjectTile> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    if (p.tasks.isNotEmpty)
-                      const SizedBox(height: 4),
+                    if (p.tasks.isNotEmpty) const SizedBox(height: 4),
                     if (p.tasks.isNotEmpty)
                       Text(
                         '${p.tasks.where((t) => t.isCompleted).length}/${p.tasks.length} 완료',
@@ -469,18 +912,16 @@ class _ProjectTileState extends State<_ProjectTile> {
                       backgroundColor: widget.isDark
                           ? AppColors.darkBorder
                           : AppColors.lightBorder,
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        p.status.color,
-                      ),
+                      valueColor: AlwaysStoppedAnimation<Color>(p.status.color),
                     ),
                   ),
                 ),
                 const SizedBox(width: AppSizes.sm),
                 Text(
                   '${(p.progress * 100).toInt()}%',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                  style: Theme.of(
+                    context,
+                  ).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600),
                 ),
               ],
 
@@ -591,11 +1032,7 @@ class _AreaTile extends StatelessWidget {
               color: AppColors.areas.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(AppSizes.radiusSm),
             ),
-            child: Icon(
-              area.icon,
-              size: 18,
-              color: AppColors.areas,
-            ),
+            child: Icon(area.icon, size: 18, color: AppColors.areas),
           ),
           const SizedBox(width: AppSizes.md),
           Expanded(
