@@ -53,3 +53,9 @@ lib/data/database/app_database.g.dart
 
 # Firebase configuration (contains API keys - generate with: flutterfire configure)
 lib/firebase_options.dart
+
+# Firebase CLI deployment cache
+.firebase/
+
+# Android Firebase config (contains API keys - generate with: flutterfire configure)
+android/app/google-services.json
