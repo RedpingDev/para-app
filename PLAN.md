@@ -573,3 +573,175 @@ Week 6: 완성도
 > 📅 **문서 작성일**: 2026-02-18
 > 📝 **버전**: v1.0
 > 🏷️ **상태**: 계획 단계
+
+---
+
+## 10. 현재 구현 현황 (As-Built - 2026-02-28)
+
+> ⚠️ 이 섹션은 실제 구현된 내용입니다. 아래 내용이 계획(1~9섹션)과 다를 경우 **이 섹션을 우선 신뢰하세요.**
+
+### 10.1 프로젝트 구조
+
+```
+PARA/                                  ← Git 레포 루트 (.git 위치)
+├── .gitignore                         ← 레포 전체 ignore (.aider*, .DS_Store)
+├── icon.png                           ← 앱 원본 아이콘 (1024×1024)
+├── PLAN.md                            ← 이 문서
+└── para_app/                          ← Flutter 프로젝트 루트
+    ├── .gitignore                     ← Flutter 전용 ignore
+    ├── pubspec.yaml                   ← 패키지 의존성
+    ├── flutter_launcher_icons.yaml    ← 아이콘 자동생성 설정
+    ├── firebase.json                  ← Firebase Hosting 설정
+    ├── assets/icon/icon.png           ← 복사된 앱 아이콘
+    ├── lib/                           ← Dart 소스코드
+    │   ├── main.dart
+    │   ├── firebase_options.dart      ← ⛔ gitignore됨 (flutterfire configure로 생성)
+    │   ├── core/                      ← 색상, 크기, 테마 상수
+    │   ├── data/
+    │   │   ├── database/              ← Drift SQLite (Windows 전용)
+    │   │   │   ├── app_database.dart
+    │   │   │   └── app_database_web.dart  ← 웹용 빈 스텁 (dart:ffi 미지원 대체)
+    │   │   ├── models/                ← 데이터 모델 (Project, Area, Resource 등)
+    │   │   └── repositories/
+    │   │       ├── firestore_repository.dart  ← 실제 사용 중인 저장소
+    │   │       └── para_repository.dart       ← 조건부 import (web/non-web 분기)
+    │   ├── features/                  ← 화면별 UI
+    │   │   ├── dashboard/
+    │   │   ├── projects/
+    │   │   ├── areas/
+    │   │   ├── resources/
+    │   │   ├── archive/
+    │   │   ├── inbox/
+    │   │   ├── auth/                  ← Google 로그인 화면
+    │   │   └── settings/
+    │   ├── providers/
+    │   │   └── para_providers.dart    ← 모든 Riverpod 상태 관리
+    │   └── shared/layouts/
+    │       └── main_layout.dart       ← 반응형 레이아웃 (모바일/데스크탑)
+    ├── android/
+    │   └── app/
+    │       ├── google-services.json   ← ⛔ gitignore됨 (Firebase Android 설정)
+    │       └── src/main/AndroidManifest.xml
+    └── web/                           ← Flutter Web 플랫폼 파일
+```
+
+### 10.2 실제 기술 스택 (계획과 다른 부분)
+
+| 항목 | 계획 | 실제 구현 |
+|------|------|-----------|
+| 데이터 저장 | SQLite (Drift) | **Firestore** (Cloud) + SQLite는 Windows 전용으로 유지 |
+| 인증 | 없음 | **Firebase Auth** + Google Sign-In |
+| 배포 | 미정 | **Firebase Hosting** (`https://para-app-38b63.web.app`) |
+| 플랫폼 | Windows 1차 | **Web 배포 완료**, Windows/Android 빌드 가능 |
+| URL 열기 | url_launcher 예정 | **url_launcher 구현 완료** |
+
+### 10.3 Firebase 설정
+
+```
+Firebase 프로젝트 ID : para-app-38b63
+Firebase 콘솔 URL   : https://console.firebase.google.com/project/para-app-38b63
+웹 배포 URL         : https://para-app-38b63.web.app
+인증 방식           : Google Sign-In
+                      - 웹/Windows: signInWithPopup
+                      - Android: signInWithRedirect
+Firestore 구조      : users/{uid}/projects|tasks|areas|resources|tags|inbox
+```
+
+**민감 파일 (gitignore, 로컬에만 존재):**
+- `para_app/lib/firebase_options.dart` → `flutterfire configure`로 재생성 가능
+- `para_app/android/app/google-services.json` → Firebase 콘솔에서 재다운로드 가능
+
+### 10.4 빌드 방법
+
+#### 웹 빌드
+```powershell
+# 반드시 para_app/ 디렉토리에서 실행
+cd para_app
+
+flutter build web --release --no-tree-shake-icons
+# ⚠️ --no-tree-shake-icons 필수: 동적 IconData 사용으로 tree-shake 불가
+# 결과물: para_app/build/web/
+```
+
+#### Android 빌드
+```powershell
+flutter build apk --release --no-tree-shake-icons
+# ⚠️ Google Sign-In 사용 시 SHA-1 등록 필요
+# Firebase 콘솔 → 프로젝트 설정 → Android 앱 → SHA-1 추가
+```
+
+#### Windows 빌드
+```powershell
+flutter build windows --release
+```
+
+#### 코드 생성 (Drift, Riverpod)
+```powershell
+# Drift DB 또는 Riverpod 어노테이션 변경 후 반드시 실행
+dart run build_runner build --delete-conflicting-outputs
+```
+
+### 10.5 배포 방법 (Firebase Hosting)
+
+```powershell
+# 1. 웹 빌드 먼저 (para_app/ 에서)
+flutter build web --release --no-tree-shake-icons
+
+# 2. Firebase Hosting 배포
+firebase deploy --only hosting --project para-app-38b63
+
+# 1+2 한 번에
+flutter build web --release --no-tree-shake-icons ; firebase deploy --only hosting --project para-app-38b63
+```
+
+`firebase.json` 설정:
+```json
+{
+  "hosting": {
+    "public": "build/web",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "rewrites": [{ "source": "**", "destination": "/index.html" }]
+  }
+}
+```
+
+> ⚠️ `firebase deploy`는 반드시 `para_app/` 디렉토리에서 실행해야 합니다.  
+> `firebase.json`이 `para_app/` 안에 있기 때문입니다.
+
+### 10.6 반응형 레이아웃 구조
+
+- **브레이크포인트**: `width < 600px` → 모바일, `>= 600px` → 데스크탑
+- **모바일**: `BottomNavigationBar` + AppBar (다크모드/설정/보관함 버튼)
+- **데스크탑**: `NavigationRail` 좌측 사이드바
+- **각 화면**: `LayoutBuilder`로 반응형 처리
+
+### 10.7 Git 브랜치 전략
+
+```
+main                   ← 초기 SQLite 기반 구현
+└── feature/firebase-web  ← 현재 활성 브랜치 (Firebase + Web 배포)
+```
+
+```powershell
+# 현재 브랜치 확인
+git branch
+
+# GitHub 원격 저장소
+# https://github.com/RedpingDev/para-app
+# 현재 브랜치: feature/firebase-web
+
+# 최신 코드 푸시
+git add -A
+git commit -m "커밋 메시지"
+git push origin feature/firebase-web
+```
+
+### 10.8 아이콘 설정
+
+- 원본: `PARA/icon.png` (1024×1024 PNG)
+- 복사본: `para_app/assets/icon/icon.png`
+- 설정 파일: `para_app/flutter_launcher_icons.yaml`
+- 아이콘 재생성 명령:
+```powershell
+dart run flutter_launcher_icons
+```
