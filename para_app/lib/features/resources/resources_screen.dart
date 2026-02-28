@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:uuid/uuid.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
@@ -8,6 +10,18 @@ import '../../data/models/models.dart';
 import '../../providers/para_providers.dart';
 
 const _uuid = Uuid();
+
+Future<void> _launchUrl(String url) async {
+  final raw = url.trim();
+  final uri = raw.startsWith('http://') || raw.startsWith('https://')
+      ? Uri.tryParse(raw)
+      : Uri.tryParse('https://$raw');
+  if (uri == null) return;
+  await launchUrl(
+    uri,
+    mode: kIsWeb ? LaunchMode.platformDefault : LaunchMode.externalApplication,
+  );
+}
 
 class ResourcesScreen extends ConsumerStatefulWidget {
   const ResourcesScreen({super.key});
@@ -247,9 +261,30 @@ class _ResourcesScreenState extends ConsumerState<ResourcesScreen> {
               ),
               if (resource.url != null) ...[
                 const SizedBox(height: AppSizes.sm),
-                Text(
-                  resource.url!,
-                  style: TextStyle(color: AppColors.primary, fontSize: 13),
+                GestureDetector(
+                  onTap: () => _launchUrl(resource.url!),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.open_in_new,
+                        size: 14,
+                        color: AppColors.primary,
+                      ),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          resource.url!,
+                          style: const TextStyle(
+                            color: AppColors.primary,
+                            fontSize: 13,
+                            decoration: TextDecoration.underline,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
               if (resource.content != null) ...[
@@ -625,23 +660,31 @@ class _ResourceDetail extends StatelessWidget {
 
           if (resource.url != null) ...[
             const SizedBox(height: AppSizes.sm),
-            Row(
-              children: [
-                const Icon(Icons.link, size: 16, color: AppColors.areas),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    resource.url!,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.areas,
-                      decoration: TextDecoration.underline,
-                    ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+            InkWell(
+              onTap: () => _launchUrl(resource.url!),
+              borderRadius: BorderRadius.circular(4),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.open_in_new,
+                    size: 16,
+                    color: AppColors.areas,
                   ),
-                ),
-              ],
+                  const SizedBox(width: 4),
+                  Expanded(
+                    child: Text(
+                      resource.url!,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        color: AppColors.areas,
+                        decoration: TextDecoration.underline,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
 

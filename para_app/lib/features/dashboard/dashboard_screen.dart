@@ -520,25 +520,74 @@ class _ParaGuideCardState extends State<_ParaGuideCard>
                                   ),
                             ),
                             const SizedBox(height: AppSizes.lg),
-                            Row(
-                              children: _items
-                                  .map(
-                                    (item) => Expanded(
-                                      child: Padding(
-                                        padding: const EdgeInsets.only(
-                                          right: AppSizes.md,
-                                        ),
-                                        child: _GuideItemCard(
-                                          item: item,
-                                          isDark: isDark,
-                                        ),
+                            LayoutBuilder(
+                              builder: (context, constraints) {
+                                final isMobile = constraints.maxWidth < 500;
+                                if (isMobile) {
+                                  // 모바일: 2×2 그리드
+                                  return Column(
+                                    children: [
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: _GuideItemCard(
+                                              item: _items[0],
+                                              isDark: isDark,
+                                            ),
+                                          ),
+                                          const SizedBox(width: AppSizes.sm),
+                                          Expanded(
+                                            child: _GuideItemCard(
+                                              item: _items[1],
+                                              isDark: isDark,
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                    ),
-                                  )
-                                  .toList(),
+                                      const SizedBox(height: AppSizes.sm),
+                                      Row(
+                                        children: [
+                                          Expanded(
+                                            child: _GuideItemCard(
+                                              item: _items[2],
+                                              isDark: isDark,
+                                            ),
+                                          ),
+                                          const SizedBox(width: AppSizes.sm),
+                                          Expanded(
+                                            child: _GuideItemCard(
+                                              item: _items[3],
+                                              isDark: isDark,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  );
+                                }
+                                // 데스크탑: 4열 가로
+                                return Row(
+                                  children: _items
+                                      .map(
+                                        (item) => Expanded(
+                                          child: Padding(
+                                            padding: const EdgeInsets.only(
+                                              right: AppSizes.md,
+                                            ),
+                                            child: _GuideItemCard(
+                                              item: item,
+                                              isDark: isDark,
+                                            ),
+                                          ),
+                                        ),
+                                      )
+                                      .toList(),
+                                );
+                              },
                             ),
                             const SizedBox(height: AppSizes.md),
                             Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Icon(
                                   Icons.info_outline,
@@ -548,15 +597,17 @@ class _ParaGuideCardState extends State<_ParaGuideCard>
                                       : AppColors.lightTextMuted,
                                 ),
                                 const SizedBox(width: AppSizes.xs),
-                                Text(
-                                  '핵심 원칙: 항목을 추가할 때 "가장 가까운 미래에 어디서 이것이 필요할까?"를 먼저 질문하세요.',
-                                  style: Theme.of(context).textTheme.bodySmall
-                                      ?.copyWith(
-                                        color: isDark
-                                            ? AppColors.darkTextMuted
-                                            : AppColors.lightTextMuted,
-                                        fontStyle: FontStyle.italic,
-                                      ),
+                                Expanded(
+                                  child: Text(
+                                    '핵심 원칙: 항목을 추가할 때 "가장 가까운 미래에 어디서 이것이 필요할까?"를 먼저 질문하세요.',
+                                    style: Theme.of(context).textTheme.bodySmall
+                                        ?.copyWith(
+                                          color: isDark
+                                              ? AppColors.darkTextMuted
+                                              : AppColors.lightTextMuted,
+                                          fontStyle: FontStyle.italic,
+                                        ),
+                                  ),
                                 ),
                               ],
                             ),

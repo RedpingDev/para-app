@@ -99,38 +99,45 @@ class _AreasScreenState extends ConsumerState<AreasScreen> {
                             : constraints.maxWidth < 800
                             ? 2
                             : 3;
-                        return GridView.builder(
-                          gridDelegate:
-                              SliverGridDelegateWithFixedCrossAxisCount(
-                                crossAxisCount: cols,
-                                crossAxisSpacing: AppSizes.lg,
-                                mainAxisSpacing: AppSizes.lg,
-                                childAspectRatio: cols == 1 ? 2.2 : 1.6,
-                              ),
-                          itemCount: areas.length,
-                          itemBuilder: (context, index) {
-                            return _AreaCard(
-                                  area: areas[index],
-                                  isDark: isDark,
-                                  onArchive: () => ref
-                                      .read(areasProvider.notifier)
-                                      .archive(areas[index].id),
-                                  onDelete: () => ref
-                                      .read(areasProvider.notifier)
-                                      .remove(areas[index].id),
-                                  onEdit: () =>
-                                      _showEditDialog(context, areas[index]),
-                                )
-                                .animate()
-                                .fadeIn(
-                                  delay: Duration(milliseconds: 80 * index),
-                                  duration: 400.ms,
-                                )
-                                .scale(
-                                  begin: const Offset(0.95, 0.95),
-                                  end: const Offset(1, 1),
-                                );
-                          },
+                        final cardWidth =
+                            (constraints.maxWidth - AppSizes.lg * (cols - 1)) /
+                            cols;
+                        return SingleChildScrollView(
+                          child: Wrap(
+                            spacing: AppSizes.lg,
+                            runSpacing: AppSizes.lg,
+                            children: areas.asMap().entries.map((entry) {
+                              final index = entry.key;
+                              final area = entry.value;
+                              return SizedBox(
+                                width: cardWidth,
+                                child:
+                                    _AreaCard(
+                                          area: area,
+                                          isDark: isDark,
+                                          onArchive: () => ref
+                                              .read(areasProvider.notifier)
+                                              .archive(area.id),
+                                          onDelete: () => ref
+                                              .read(areasProvider.notifier)
+                                              .remove(area.id),
+                                          onEdit: () =>
+                                              _showEditDialog(context, area),
+                                        )
+                                        .animate()
+                                        .fadeIn(
+                                          delay: Duration(
+                                            milliseconds: 80 * index,
+                                          ),
+                                          duration: 400.ms,
+                                        )
+                                        .scale(
+                                          begin: const Offset(0.95, 0.95),
+                                          end: const Offset(1, 1),
+                                        ),
+                              );
+                            }).toList(),
+                          ),
                         );
                       },
                     ),
@@ -400,11 +407,9 @@ class _AreaCardState extends State<_AreaCard> {
                 Text(
                   a.description!,
                   style: Theme.of(context).textTheme.bodySmall,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
                 ),
               ],
-              const Spacer(),
+              if (a.standard != null) const SizedBox(height: AppSizes.md),
               if (a.standard != null)
                 Container(
                   padding: const EdgeInsets.symmetric(
