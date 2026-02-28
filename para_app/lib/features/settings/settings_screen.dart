@@ -4,6 +4,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_sizes.dart';
 import '../../providers/para_providers.dart';
+import '../../services/auth_service.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -11,6 +12,7 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isDark = ref.watch(themeModeProvider);
+    final user = ref.watch(currentUserProvider);
 
     return Scaffold(
       body: SingleChildScrollView(
@@ -21,12 +23,17 @@ class SettingsScreen extends ConsumerWidget {
             Row(
               children: [
                 Container(
-                  width: 40, height: 40,
+                  width: 40,
+                  height: 40,
                   decoration: BoxDecoration(
                     color: AppColors.primary.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(AppSizes.radiusMd),
                   ),
-                  child: const Icon(Icons.settings, color: AppColors.primary, size: 22),
+                  child: const Icon(
+                    Icons.settings,
+                    color: AppColors.primary,
+                    size: 22,
+                  ),
                 ),
                 const SizedBox(width: AppSizes.md),
                 Text('설정', style: Theme.of(context).textTheme.displayMedium),
@@ -34,6 +41,91 @@ class SettingsScreen extends ConsumerWidget {
             ).animate().fadeIn(duration: 300.ms),
 
             const SizedBox(height: AppSizes.xxl),
+
+            // Account
+            if (user != null)
+              _SettingsSection(
+                title: '계정',
+                isDark: isDark,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(AppSizes.lg),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 22,
+                          backgroundImage: user.photoURL != null
+                              ? NetworkImage(user.photoURL!)
+                              : null,
+                          backgroundColor: AppColors.primary.withValues(
+                            alpha: 0.12,
+                          ),
+                          child: user.photoURL == null
+                              ? const Icon(
+                                  Icons.person,
+                                  color: AppColors.primary,
+                                )
+                              : null,
+                        ),
+                        const SizedBox(width: AppSizes.md),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                user.displayName ?? '사용자',
+                                style: Theme.of(context).textTheme.titleMedium,
+                              ),
+                              Text(
+                                user.email ?? '',
+                                style: Theme.of(context).textTheme.bodySmall,
+                              ),
+                            ],
+                          ),
+                        ),
+                        TextButton.icon(
+                          onPressed: () async {
+                            final confirmed = await showDialog<bool>(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                title: const Text('로그아웃'),
+                                content: const Text('정말 로그아웃 하시겠습니까?'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(ctx, false),
+                                    child: const Text('취소'),
+                                  ),
+                                  ElevatedButton(
+                                    onPressed: () => Navigator.pop(ctx, true),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.error,
+                                    ),
+                                    child: const Text('로그아웃'),
+                                  ),
+                                ],
+                              ),
+                            );
+                            if (confirmed == true) {
+                              await ref.read(authServiceProvider).signOut();
+                            }
+                          },
+                          icon: const Icon(
+                            Icons.logout,
+                            size: 16,
+                            color: AppColors.error,
+                          ),
+                          label: const Text(
+                            '로그아웃',
+                            style: TextStyle(color: AppColors.error),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ).animate().fadeIn(delay: 50.ms, duration: 400.ms),
+
+            if (user != null) const SizedBox(height: AppSizes.lg),
 
             // Theme
             _SettingsSection(
@@ -47,7 +139,8 @@ class SettingsScreen extends ConsumerWidget {
                   isDark: isDark,
                   trailing: Switch(
                     value: isDark,
-                    onChanged: (v) => ref.read(themeModeProvider.notifier).set(v),
+                    onChanged: (v) =>
+                        ref.read(themeModeProvider.notifier).set(v),
                     activeThumbColor: AppColors.primary,
                   ),
                 ),
@@ -118,26 +211,43 @@ class _SettingsSection extends StatelessWidget {
   final bool isDark;
   final List<Widget> children;
 
-  const _SettingsSection({required this.title, required this.isDark, required this.children});
+  const _SettingsSection({
+    required this.title,
+    required this.isDark,
+    required this.children,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(title, style: Theme.of(context).textTheme.titleMedium?.copyWith(color: AppColors.primary)),
+        Text(
+          title,
+          style: Theme.of(
+            context,
+          ).textTheme.titleMedium?.copyWith(color: AppColors.primary),
+        ),
         const SizedBox(height: AppSizes.md),
         Container(
           decoration: BoxDecoration(
             color: isDark ? AppColors.darkCard : AppColors.lightCard,
             borderRadius: BorderRadius.circular(AppSizes.radiusLg),
-            border: Border.all(color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
+            border: Border.all(
+              color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
+            ),
           ),
           child: Column(
             children: children.asMap().entries.map((entry) {
               return Column(
                 children: [
-                  if (entry.key > 0) Divider(height: 1, color: isDark ? AppColors.darkBorder : AppColors.lightBorder),
+                  if (entry.key > 0)
+                    Divider(
+                      height: 1,
+                      color: isDark
+                          ? AppColors.darkBorder
+                          : AppColors.lightBorder,
+                    ),
                   entry.value,
                 ],
               );
@@ -157,8 +267,11 @@ class _SettingsTile extends StatelessWidget {
   final Widget? trailing;
 
   const _SettingsTile({
-    required this.icon, required this.title, required this.subtitle,
-    required this.isDark, this.trailing,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.isDark,
+    this.trailing,
   });
 
   @override
@@ -168,7 +281,8 @@ class _SettingsTile extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 36, height: 36,
+            width: 36,
+            height: 36,
             decoration: BoxDecoration(
               color: AppColors.primary.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(AppSizes.radiusSm),

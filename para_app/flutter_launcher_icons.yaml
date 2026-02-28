@@ -1,0 +1,22 @@
+flutter_launcher_icons:
+  # 원본 아이콘 (배경 포함된 1024x1024 PNG)
+  image_path: "assets/icon/icon.png"
+
+  # Android
+  android: true
+  min_sdk_android: 21
+  adaptive_icon_background: "#7B3FE4"   # 아이콘 배경색 (그라디언트 대표색)
+  adaptive_icon_foreground: "assets/icon/icon.png"
+  
+  # Web
+  web:
+    generate: true
+    image_path: "assets/icon/icon.png"
+    background_color: "#7B3FE4"
+    theme_color: "#7B3FE4"
+
+  # Windows
+  windows:
+    generate: true
+    image_path: "assets/icon/icon.png"
+    icon_size: 48

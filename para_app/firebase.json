@@ -1,0 +1,37 @@
+{
+    "flutter":  {
+                    "platforms":  {
+                                      "dart":  {
+                                                   "lib/firebase_options.dart":  {
+                                                                                     "projectId":  "para-app-38b63",
+                                                                                     "configurations":  {
+                                                                                                            "android":  "1:57780896148:android:7712210aa6e50c399e8f81",
+                                                                                                            "web":  "1:57780896148:web:d2d97900efaf0e9c9e8f81",
+                                                                                                            "windows":  "1:57780896148:web:d2d97900efaf0e9c9e8f81"
+                                                                                                        }
+                                                                                 }
+                                               },
+                                      "android":  {
+                                                      "default":  {
+                                                                      "projectId":  "para-app-38b63",
+                                                                      "appId":  "1:57780896148:android:7712210aa6e50c399e8f81",
+                                                                      "fileOutput":  "android/app/google-services.json"
+                                                                  }
+                                                  }
+                                  }
+                },
+    "hosting":  {
+                    "ignore":  [
+                                   "firebase.json",
+                                   "**/.*",
+                                   "**/node_modules/**"
+                               ],
+                    "public":  "build/web",
+                    "rewrites":  [
+                                     {
+                                         "destination":  "/index.html",
+                                         "source":  "**"
+                                     }
+                                 ]
+                }
+}

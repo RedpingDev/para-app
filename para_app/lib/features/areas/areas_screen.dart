@@ -43,12 +43,17 @@ class _AreasScreenState extends ConsumerState<AreasScreen> {
             Row(
               children: [
                 Container(
-                  width: 40, height: 40,
+                  width: 40,
+                  height: 40,
                   decoration: BoxDecoration(
                     color: AppColors.areas.withValues(alpha: 0.12),
                     borderRadius: BorderRadius.circular(AppSizes.radiusMd),
                   ),
-                  child: const Icon(Icons.home, color: AppColors.areas, size: 22),
+                  child: const Icon(
+                    Icons.home,
+                    color: AppColors.areas,
+                    size: 22,
+                  ),
                 ),
                 const SizedBox(width: AppSizes.md),
                 Text('영역', style: Theme.of(context).textTheme.displayMedium),
@@ -57,7 +62,9 @@ class _AreasScreenState extends ConsumerState<AreasScreen> {
                   onPressed: () => _showCreateDialog(context),
                   icon: const Icon(Icons.add, size: 18),
                   label: const Text('새 영역'),
-                  style: ElevatedButton.styleFrom(backgroundColor: AppColors.areas),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.areas,
+                  ),
                 ),
               ],
             ).animate().fadeIn(duration: 300.ms),
@@ -70,35 +77,141 @@ class _AreasScreenState extends ConsumerState<AreasScreen> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.home_outlined, size: 64,
-                            color: isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted),
+                          Icon(
+                            Icons.home_outlined,
+                            size: 64,
+                            color: isDark
+                                ? AppColors.darkTextMuted
+                                : AppColors.lightTextMuted,
+                          ),
                           const SizedBox(height: AppSizes.lg),
-                          Text('아직 영역이 없습니다', style: Theme.of(context).textTheme.bodyMedium),
+                          Text(
+                            '아직 영역이 없습니다',
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
                         ],
                       ),
                     )
-                  : GridView.builder(
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 3,
-                        crossAxisSpacing: AppSizes.lg,
-                        mainAxisSpacing: AppSizes.lg,
-                        childAspectRatio: 1.6,
-                      ),
-                      itemCount: areas.length,
-                      itemBuilder: (context, index) {
-                        return _AreaCard(
-                          area: areas[index],
-                          isDark: isDark,
-                          onArchive: () => ref.read(areasProvider.notifier).archive(areas[index].id),
-                          onDelete: () => ref.read(areasProvider.notifier).remove(areas[index].id),
-                        ).animate()
-                            .fadeIn(delay: Duration(milliseconds: 80 * index), duration: 400.ms)
-                            .scale(begin: const Offset(0.95, 0.95), end: const Offset(1, 1));
+                  : LayoutBuilder(
+                      builder: (context, constraints) {
+                        final cols = constraints.maxWidth < 500
+                            ? 1
+                            : constraints.maxWidth < 800
+                            ? 2
+                            : 3;
+                        final cardWidth =
+                            (constraints.maxWidth - AppSizes.lg * (cols - 1)) /
+                            cols;
+                        return SingleChildScrollView(
+                          child: Wrap(
+                            spacing: AppSizes.lg,
+                            runSpacing: AppSizes.lg,
+                            children: areas.asMap().entries.map((entry) {
+                              final index = entry.key;
+                              final area = entry.value;
+                              return SizedBox(
+                                width: cardWidth,
+                                child:
+                                    _AreaCard(
+                                          area: area,
+                                          isDark: isDark,
+                                          onArchive: () => ref
+                                              .read(areasProvider.notifier)
+                                              .archive(area.id),
+                                          onDelete: () => ref
+                                              .read(areasProvider.notifier)
+                                              .remove(area.id),
+                                          onEdit: () =>
+                                              _showEditDialog(context, area),
+                                        )
+                                        .animate()
+                                        .fadeIn(
+                                          delay: Duration(
+                                            milliseconds: 80 * index,
+                                          ),
+                                          duration: 400.ms,
+                                        )
+                                        .scale(
+                                          begin: const Offset(0.95, 0.95),
+                                          end: const Offset(1, 1),
+                                        ),
+                              );
+                            }).toList(),
+                          ),
+                        );
                       },
                     ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showEditDialog(BuildContext context, Area area) {
+    _titleController.text = area.title;
+    _descController.text = area.description ?? '';
+    _standardController.text = area.standard ?? '';
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('영역 수정'),
+        content: SizedBox(
+          width: 400,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: _titleController,
+                autofocus: true,
+                decoration: const InputDecoration(labelText: '영역 이름'),
+              ),
+              const SizedBox(height: AppSizes.lg),
+              TextField(
+                controller: _descController,
+                maxLines: 2,
+                decoration: const InputDecoration(labelText: '설명 (선택)'),
+              ),
+              const SizedBox(height: AppSizes.lg),
+              TextField(
+                controller: _standardController,
+                decoration: const InputDecoration(
+                  labelText: '유지 기준 (선택)',
+                  hintText: '예: 매주 운동 3회',
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('취소'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (_titleController.text.trim().isEmpty) return;
+              ref
+                  .read(areasProvider.notifier)
+                  .update(
+                    area.copyWith(
+                      title: _titleController.text.trim(),
+                      description: _descController.text.trim().isEmpty
+                          ? null
+                          : _descController.text.trim(),
+                      standard: _standardController.text.trim().isEmpty
+                          ? null
+                          : _standardController.text.trim(),
+                      updatedAt: DateTime.now(),
+                    ),
+                  );
+              Navigator.pop(ctx);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.areas),
+            child: const Text('저장'),
+          ),
+        ],
       ),
     );
   }
@@ -117,29 +230,56 @@ class _AreasScreenState extends ConsumerState<AreasScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              TextField(controller: _titleController, autofocus: true,
-                decoration: const InputDecoration(labelText: '영역 이름', hintText: '예: 건강, 재정, 커리어')),
+              TextField(
+                controller: _titleController,
+                autofocus: true,
+                decoration: const InputDecoration(
+                  labelText: '영역 이름',
+                  hintText: '예: 건강, 재정, 커리어',
+                ),
+              ),
               const SizedBox(height: AppSizes.lg),
-              TextField(controller: _descController, maxLines: 2,
-                decoration: const InputDecoration(labelText: '설명 (선택)')),
+              TextField(
+                controller: _descController,
+                maxLines: 2,
+                decoration: const InputDecoration(labelText: '설명 (선택)'),
+              ),
               const SizedBox(height: AppSizes.lg),
-              TextField(controller: _standardController,
-                decoration: const InputDecoration(labelText: '유지 기준 (선택)', hintText: '예: 매주 운동 3회')),
+              TextField(
+                controller: _standardController,
+                decoration: const InputDecoration(
+                  labelText: '유지 기준 (선택)',
+                  hintText: '예: 매주 운동 3회',
+                ),
+              ),
             ],
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('취소')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('취소'),
+          ),
           ElevatedButton(
             onPressed: () {
               if (_titleController.text.trim().isEmpty) return;
               final now = DateTime.now();
-              ref.read(areasProvider.notifier).add(Area(
-                id: _uuid.v4(), title: _titleController.text.trim(),
-                description: _descController.text.trim().isEmpty ? null : _descController.text.trim(),
-                standard: _standardController.text.trim().isEmpty ? null : _standardController.text.trim(),
-                createdAt: now, updatedAt: now,
-              ));
+              ref
+                  .read(areasProvider.notifier)
+                  .add(
+                    Area(
+                      id: _uuid.v4(),
+                      title: _titleController.text.trim(),
+                      description: _descController.text.trim().isEmpty
+                          ? null
+                          : _descController.text.trim(),
+                      standard: _standardController.text.trim().isEmpty
+                          ? null
+                          : _standardController.text.trim(),
+                      createdAt: now,
+                      updatedAt: now,
+                    ),
+                  );
               Navigator.pop(ctx);
             },
             style: ElevatedButton.styleFrom(backgroundColor: AppColors.areas),
@@ -156,8 +296,15 @@ class _AreaCard extends StatefulWidget {
   final bool isDark;
   final VoidCallback onArchive;
   final VoidCallback onDelete;
+  final VoidCallback onEdit;
 
-  const _AreaCard({required this.area, required this.isDark, required this.onArchive, required this.onDelete});
+  const _AreaCard({
+    required this.area,
+    required this.isDark,
+    required this.onArchive,
+    required this.onDelete,
+    required this.onEdit,
+  });
 
   @override
   State<_AreaCard> createState() => _AreaCardState();
@@ -183,12 +330,21 @@ class _AreaCardState extends State<_AreaCard> {
             color: widget.isDark ? AppColors.darkCard : AppColors.lightCard,
             borderRadius: BorderRadius.circular(AppSizes.radiusLg),
             border: Border.all(
-              color: _isHovered ? AppColors.areas.withValues(alpha: 0.5)
-                : widget.isDark ? AppColors.darkBorder : AppColors.lightBorder,
+              color: _isHovered
+                  ? AppColors.areas.withValues(alpha: 0.5)
+                  : widget.isDark
+                  ? AppColors.darkBorder
+                  : AppColors.lightBorder,
             ),
-            boxShadow: _isHovered ? [
-              BoxShadow(color: AppColors.areas.withValues(alpha: 0.12), blurRadius: 20, offset: const Offset(0, 8)),
-            ] : [],
+            boxShadow: _isHovered
+                ? [
+                    BoxShadow(
+                      color: AppColors.areas.withValues(alpha: 0.12),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
+                  ]
+                : [],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -196,7 +352,8 @@ class _AreaCardState extends State<_AreaCard> {
               Row(
                 children: [
                   Container(
-                    width: 42, height: 42,
+                    width: 42,
+                    height: 42,
                     decoration: BoxDecoration(
                       color: AppColors.areas.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(AppSizes.radiusMd),
@@ -205,11 +362,40 @@ class _AreaCardState extends State<_AreaCard> {
                   ),
                   const Spacer(),
                   PopupMenuButton<String>(
-                    icon: Icon(Icons.more_horiz, color: widget.isDark ? AppColors.darkTextMuted : AppColors.lightTextMuted, size: 20),
-                    onSelected: (v) { if (v == 'archive') widget.onArchive(); if (v == 'delete') widget.onDelete(); },
+                    icon: Icon(
+                      Icons.more_horiz,
+                      color: widget.isDark
+                          ? AppColors.darkTextMuted
+                          : AppColors.lightTextMuted,
+                      size: 20,
+                    ),
+                    onSelected: (v) {
+                      if (v == 'edit') widget.onEdit();
+                      if (v == 'archive') widget.onArchive();
+                      if (v == 'delete') widget.onDelete();
+                    },
                     itemBuilder: (_) => [
-                      const PopupMenuItem(value: 'archive', child: Text('보관함으로 이동')),
-                      const PopupMenuItem(value: 'delete', child: Text('삭제', style: TextStyle(color: AppColors.error))),
+                      const PopupMenuItem(
+                        value: 'edit',
+                        child: Row(
+                          children: [
+                            Icon(Icons.edit_outlined, size: 18),
+                            SizedBox(width: 8),
+                            Text('수정'),
+                          ],
+                        ),
+                      ),
+                      const PopupMenuItem(
+                        value: 'archive',
+                        child: Text('보관함으로 이동'),
+                      ),
+                      const PopupMenuItem(
+                        value: 'delete',
+                        child: Text(
+                          '삭제',
+                          style: TextStyle(color: AppColors.error),
+                        ),
+                      ),
                     ],
                   ),
                 ],
@@ -218,12 +404,18 @@ class _AreaCardState extends State<_AreaCard> {
               Text(a.title, style: Theme.of(context).textTheme.titleLarge),
               if (a.description != null) ...[
                 const SizedBox(height: 4),
-                Text(a.description!, style: Theme.of(context).textTheme.bodySmall, maxLines: 2, overflow: TextOverflow.ellipsis),
+                Text(
+                  a.description!,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               ],
-              const Spacer(),
+              if (a.standard != null) const SizedBox(height: AppSizes.md),
               if (a.standard != null)
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSizes.sm, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: AppSizes.sm,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.areas.withValues(alpha: 0.08),
                     borderRadius: BorderRadius.circular(AppSizes.radiusSm),
@@ -231,10 +423,21 @@ class _AreaCardState extends State<_AreaCard> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.flag_outlined, size: 14, color: AppColors.areas),
+                      const Icon(
+                        Icons.flag_outlined,
+                        size: 14,
+                        color: AppColors.areas,
+                      ),
                       const SizedBox(width: 4),
                       Flexible(
-                        child: Text(a.standard!, style: const TextStyle(fontSize: 11, color: AppColors.areas), overflow: TextOverflow.ellipsis),
+                        child: Text(
+                          a.standard!,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: AppColors.areas,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ],
                   ),
